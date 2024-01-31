@@ -1,0 +1,1 @@
+python -m nuitka get_favicon.py --onefile
