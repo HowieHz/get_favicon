@@ -7,10 +7,16 @@ The script is used to automatically get the favicon
 
 ## 使用说明
 
-下载python版本应>3.10  
-第一次运行脚本`get_favicon.py`会在同目录下生成links.txt,在其中放置你要获取favicon的网站  
-(或者在[releases](https://github.com/HowieHz/get_favicon/releases)获取最新的二进制文件)  
-以下形式都是允许的:  
+1. 通过二进制文件运行
+    在[releases](https://github.com/HowieHz/get_favicon/releases)获取最新的二进制文件
+
+2. 通过源码运行
+    下载python版本应>3.10
+    下载最新源码
+    运行脚本`src/main.py`
+
+第一次运行会在运行所在目录下生成links.txt,在其中放置你要获取favicon的网站
+以下形式都是允许的:
 
 ```txt
 https://howiehz.top
@@ -19,7 +25,7 @@ https://howiehz.top/
 howiehz.top/
 ```
 
-之后继续执行脚本，即可完成favicon下载
+之后按照提示继续执行，即可完成favicon下载
 
 ## 反馈
 
