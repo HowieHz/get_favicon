@@ -36,7 +36,7 @@ choice_api: str = input('''
 请输入2后回车 直接在链接最后加上/favicon.ico获取
 请输入3后回车 使用iowen api （介绍 https://www.iowen.cn/faviconwangzhantubiaozhuaquapijiekou/） 
 请输入4后回车 下载该页面的html文件，并分析其<link rel="icon">和<link rel="shortcut icon">标签（主要适用于上面的api下载的icon和实际的icon不同的情况）
-（浏览器是优先2号api，如果2号api失败就使用4号api，此处4号api失败可以尝试2号api）(实测除2，4api以外，0号api速度和质量都较好)
+（此处4号api失败可以尝试2号api）(实测除2，4api以外，0号api速度和质量都较好)
 默认为4:''')
 
 if not os.path.exists(dir_path): # 初始化文件夹
@@ -79,7 +79,7 @@ with open('./links.txt') as links_file_stream: #读取links.txt
             if writing_mode == 'binary':
                 with open(f"{dir_path}{ico_file_name}","wb") as ico_file_stream:
                     ico_file_stream.write(content)
-            elif writing_mode == 'txt':
+            elif writing_mode in ('txt', 'text'):
                 with open(f"{dir_path}{ico_file_name}","w", encoding='utf-8') as ico_file_stream:
                     ico_file_stream.write(content)
             else:

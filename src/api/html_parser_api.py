@@ -62,6 +62,7 @@ class HTMLParser(HTMLParser):
             print(f"#gbi4 url={self.url}{href_value}")
             r: requests.Response = requests.get(url=f'{self.url}{href_value}', headers=headers)
         self.ret.append((r.content, file_type, 'binary'))
+        return
 
     def handle_starttag(self, tag, attrs):
         # 要是这个网站写了多条<link rel="icon">和<link rel="shortcut icon">标签, 
@@ -87,6 +88,8 @@ class HTMLParser(HTMLParser):
             self.href_attr_parser(href_value)
         else:
             pass # 有<link rel="icon">和<link rel="shortcut icon">标签，但是没有href和type
+        
+        return
     
     def href_attr_parser(self, href_value) -> None:
         # 先看看RFC2397定义的一些数据
@@ -115,6 +118,7 @@ class HTMLParser(HTMLParser):
             case 'image/svg+xml':  # svg文件 https://developer.mozilla.org/zh-CN/docs/Web/Media/Formats/Image_types
                 if not href_value.endswith('.svg'):
                     self.ret.append((urllib.parse.unquote(href_value.removeprefix('data:image/svg+xml,')), 'svg', 'txt'))
+                    return
                 self.get_binary_img(href_value, 'svg')
             case 'image/apng': # apng
                 self.get_binary_img(href_value, 'apng')
@@ -136,3 +140,4 @@ class HTMLParser(HTMLParser):
                 self.get_binary_img(href_value, 'tif')
             case _:
                 self.ret.append((f"该网站填写了错误的数据标签，如果看到此消息，请提交issue给此项目，包括此文件，开发者将帮忙联系网站管理者\nself.url:{self.url}\nattr_value_dict['type']:{attr_value_dict['type']}", 'txt', 'txt'))  # 不合法的type
+        return
