@@ -24,7 +24,7 @@ class API(APIBase):
         parser = HTMLParser(url=url)
         parser.feed(response.text)
         if parser.ret:
-            return parser.ret[0]
+            return parser.ret[-1]  # 因为看到一个网站192*192写在32*32后面，所以取-1了
         else:
             return (f'此api不支持该网站\nhtml原文:\n{response.text}', 'txt', 'txt')
 
@@ -49,17 +49,24 @@ class HTMLParser(HTMLParser):
                 href_value = 'https:' + href_value
             elif self.url.startswith('http:'):
                 href_value = 'http:' + href_value
+            print(f"#gbi1 url={href_value}")
             r: requests.Response = requests.get(url=f'{href_value}', headers=headers)
         elif href_value.startswith('/'):  # 处理一下 /xxx.xxx
+            print(f"#gbi2 url={self.url}{href_value}")
             r: requests.Response = requests.get(url=f'{self.url}{href_value}', headers=headers)
+        elif href_value.startswith('https:') or href_value.startswith('http:'):  # 处理一下 https://xxx.xxx or http://xxx.xxx
+            print(f"#gbi3 url={href_value}")
+            r: requests.Response = requests.get(url=f'{href_value}', headers=headers)
         else:
             href_value = f'/{href_value}'  # 处理一下 xxx.xxx
+            print(f"#gbi4 url={self.url}{href_value}")
             r: requests.Response = requests.get(url=f'{self.url}{href_value}', headers=headers)
         self.ret.append((r.content, file_type, 'binary'))
 
     def handle_starttag(self, tag, attrs):
         # 要是这个网站写了多条<link rel="icon">和<link rel="shortcut icon">标签, 
         # 就会多次解析，后面一条会覆盖前一条，最后留下的是最下面一条，也符合浏览器的读取，缺点是会多次下载该网站的icon
+        # 对应上面 return parser.ret[-1]
         if tag != 'link':
             return
 
