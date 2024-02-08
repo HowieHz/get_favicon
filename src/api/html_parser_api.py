@@ -26,7 +26,7 @@ class API(APIBase):
         if parser.ret:
             return parser.ret[-1]  # 因为看到一个网站192*192写在32*32后面，所以取-1了
         else:
-            return (f'此api不支持该网站\nhtml原文:\n{response.text}', 'txt', 'txt')
+            return (f'此api不支持该网站\nhtml原文:\n{response.text}', 'txt', 'text')
 
 
 class HTMLParser(HTMLParser):
@@ -117,7 +117,7 @@ class HTMLParser(HTMLParser):
         match attr_value_dict['type']:
             case 'image/svg+xml':  # svg文件 https://developer.mozilla.org/zh-CN/docs/Web/Media/Formats/Image_types
                 if not href_value.endswith('.svg'):
-                    self.ret.append((urllib.parse.unquote(href_value.removeprefix('data:image/svg+xml,')), 'svg', 'txt'))
+                    self.ret.append((urllib.parse.unquote(href_value.removeprefix('data:image/svg+xml,')), 'svg', 'text'))
                     return
                 self.get_binary_img(href_value, 'svg')
             case 'image/apng': # apng
@@ -139,5 +139,5 @@ class HTMLParser(HTMLParser):
             case 'image/tiff': # .tif、.tiff
                 self.get_binary_img(href_value, 'tif')
             case _:
-                self.ret.append((f"该网站填写了错误的数据标签，如果看到此消息，请提交issue给此项目，包括此文件，开发者将帮忙联系网站管理者\nself.url:{self.url}\nattr_value_dict['type']:{attr_value_dict['type']}", 'txt', 'txt'))  # 不合法的type
+                self.ret.append((f"该网站填写了错误的数据标签，如果看到此消息，请提交issue给此项目，包括此文件，开发者将帮忙联系网站管理者\nself.url:{self.url}\nattr_value_dict['type']:{attr_value_dict['type']}", 'txt', 'text'))  # 不合法的type
         return

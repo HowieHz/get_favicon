@@ -1,6 +1,6 @@
 import requests, os, ssl
 from typing import Union
-from api import api_interface, append_char_api, getfavicon_api, google_api, html_parser_api, iowen_api
+from api import api_interface, append_char_api, getfavicon_api, google_api, html_parser_api, iowen_api, browser_emulation_api
 
 version = 'v1.1.0'
 
@@ -36,8 +36,10 @@ choice_api: str = input('''
 请输入2后回车 直接在链接最后加上/favicon.ico获取
 请输入3后回车 使用iowen api （介绍 https://www.iowen.cn/faviconwangzhantubiaozhuaquapijiekou/） 
 请输入4后回车 下载该页面的html文件，并分析其<link rel="icon">和<link rel="shortcut icon">标签（主要适用于上面的api下载的icon和实际的icon不同的情况）
-（此处4号api失败可以尝试2号api）(实测除2，4api以外，0号api速度和质量都较好)
-默认为4:''')
+请输入5后回车 使用模拟浏览器api（先调用api4，失败后调用api2）
+
+(实测除2，4api以外，0号api速度和质量都较好)
+默认为5:''')
 
 if not os.path.exists(dir_path): # 初始化文件夹
     os.makedirs(dir_path)
@@ -68,8 +70,10 @@ with open('./links.txt') as links_file_stream: #读取links.txt
                 api = append_char_api.API
             case '3':
                 api = iowen_api.API
-            case _:
+            case '4':
                 api = html_parser_api.API
+            case _:
+                api = browser_emulation_api.API
 
         try:
             content, file_type, writing_mode = api.get(link)
