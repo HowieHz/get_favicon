@@ -6,7 +6,7 @@ class APIBase():
         """api规范
 
         Args:
-            url (str): 
+            url (str): [http://,https://]aaa.com
 
         Returns:
             tuple[Union[str, bytes], str, str]: 需要写入文件的值，文件后缀，写入模式('binary' / 'text')

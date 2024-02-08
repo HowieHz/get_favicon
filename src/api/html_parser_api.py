@@ -1,8 +1,13 @@
 from html.parser import HTMLParser
 import urllib.parse
 import requests
+import base64
 from api.api_interface import APIBase
 from typing import Union
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:10.0) Gecko/20100101 Firefox/10.0"
+}
 
 class API(APIBase):
     @staticmethod
@@ -10,12 +15,12 @@ class API(APIBase):
         """api规范
 
         Args:
-            url (str): 
+            url (str): [http://,https://]aaa.com
 
         Returns:
             tuple[Union[str, bytes], str, str]: 需要写入文件的值，文件后缀，写入模式('binary' / 'text')
         """
-        response: requests.Response = requests.get(url)
+        response: requests.Response = requests.get(url=url, headers=headers)
         parser = HTMLParser(url=url)
         parser.feed(response.text)
         if parser.ret:
@@ -31,58 +36,96 @@ class HTMLParser(HTMLParser):
         If convert_charrefs is True (the default), all character references
         are automatically converted to the corresponding Unicode characters.
         """
-        self.url = url
-        self.ret = []
         self.convert_charrefs = convert_charrefs
         self.reset()
+        
+        # 新增
+        self.url = url
+        self.ret: list[Union[str,bytes], str, str] = []
     
     def get_binary_img(self, href_value: str, file_type: str):
-        if not href_value.startswith('/'):
-            href_value = f'/{href_value}'
-        r: requests.Response = requests.get(f'{self.url}{href_value}')
+        if href_value.startswith('//'):  # 处理一下 //xxx.xxx
+            if self.url.startswith('https:'):
+                href_value = 'https:' + href_value
+            elif self.url.startswith('http:'):
+                href_value = 'http:' + href_value
+            r: requests.Response = requests.get(url=f'{href_value}', headers=headers)
+        elif href_value.startswith('/'):  # 处理一下 /xxx.xxx
+            r: requests.Response = requests.get(url=f'{self.url}{href_value}', headers=headers)
+        else:
+            href_value = f'/{href_value}'  # 处理一下 xxx.xxx
+            r: requests.Response = requests.get(url=f'{self.url}{href_value}', headers=headers)
         self.ret.append((r.content, file_type, 'binary'))
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'link':
+        # 要是这个网站写了多条<link rel="icon">和<link rel="shortcut icon">标签, 
+        # 就会多次解析，后面一条会覆盖前一条，最后留下的是最下面一条，也符合浏览器的读取，缺点是会多次下载该网站的icon
+        if tag != 'link':
+            return
 
-            attr_value_dict: dict[str, str] = {}
-            for attr_name, attr_value in attrs:
-                attr_value_dict[attr_name] = attr_value
+        attr_value_dict: dict[str, str] = {}
+        for attr_name, attr_value in attrs:
+            attr_value_dict[attr_name] = attr_value
 
-            if attr_value_dict['rel'] == 'icon' or attr_value_dict['rel'] == 'shortcut icon':  # 要是这个网站写了多条<link rel="icon">和<link rel="shortcut icon">标签, 就会多次解析，后面一条会覆盖前一条，最后留下的是最下面一条，也符合浏览器的读取，缺点是会多次下载该网站的icon
-                # print('#45', attr_value_dict)
-                if 'type' in attr_value_dict:
-                    match attr_value_dict['type']:
-                        case 'image/svg+xml':  # svg文件 https://developer.mozilla.org/zh-CN/docs/Web/Media/Formats/Image_types
-                            self.ret.append((urllib.parse.unquote(attr_value_dict['href'].removeprefix('data:image/svg+xml,')), 'svg', 'txt'))
-                        case 'image/apng': # apng
-                            self.get_binary_img(attr_value_dict['href'], 'apng')
-                        case 'image/avif': # avif
-                            self.get_binary_img(attr_value_dict['href'], 'avif')
-                        case 'image/gif': # gif
-                            self.get_binary_img(attr_value_dict['href'], 'gif')
-                        case 'image/jpeg': # .jpg, .jpeg, .jfif, .pjpeg, .pjp
-                            self.get_binary_img(attr_value_dict['href'], 'jpeg')
-                        case 'image/png': # .png
-                            self.get_binary_img(attr_value_dict['href'], 'png')
-                        case 'image/webp': # .webp
-                            self.get_binary_img(attr_value_dict['href'], 'webp')
-                        case 'image/bmp': # .bmp
-                            self.get_binary_img(attr_value_dict['href'], 'bmp')
-                        case 'image/x-icon': # .ico、.cur
-                            self.get_binary_img(attr_value_dict['href'], 'ico')
-                        case 'image/tiff': # .tif、.tiff
-                            self.get_binary_img(attr_value_dict['href'], 'tif')
-                        case _:
-                            self.ret.append((f"如果看到此消息，请提交issue给此项目，包括此文件，开发者将很快进行适配\nself.url:{self.url}\nattr_value_dict['type']:{attr_value_dict['type']}", 'txt', 'txt'))  # 不合法的type，但是是合法的href，是否依然要下载，目前策略是放弃，需要进一步讨论，需要参考浏览器面对这种情况的应对策略
-                elif 'href' in attr_value_dict:  # 没type属性，直接匹配href属性值的后缀
-                    href_value = attr_value_dict['href']
-                    file_type_list = ('jpg' ,'jpeg' , 'png', 'ico', 'webp', 'bmp', 'gif', 'cur', 'tif', 'tiff', 'jfif', 'pjpeg', 'pjp', 'avif', 'apng')
-                    for file_type in file_type_list:
-                        if href_value.endswith(f'.{file_type}'):
-                            self.get_binary_img(href_value, file_type)
-                            break
-                    else:
-                        ...  # 无type，href也不合法，目前策略是放弃，需要进一步讨论，需要参考浏览器面对这种情况的应对策略
-                else:
-                    ...  # 有<link rel="icon">和<link rel="shortcut icon">标签，但是没有href和type
+        if not (attr_value_dict['rel'] == 'icon') and \
+            not (attr_value_dict['rel'] == 'shortcut icon'):  
+            return
+        
+        print('#45', attr_value_dict)
+        
+        href_value: str = attr_value_dict['href']
+        if 'type' in attr_value_dict:
+            self.type_attr_parser(href_value, attr_value_dict)
+        elif 'href' in attr_value_dict:  
+            self.href_attr_parser(href_value)
+        else:
+            pass # 有<link rel="icon">和<link rel="shortcut icon">标签，但是没有href和type
+    
+    def href_attr_parser(self, href_value) -> None:
+        # 先看看RFC2397定义的一些数据
+        data_uri_scheme_dict: dict[str, str] = {
+            "data:image/gif;base64,": "gif",
+            "data:image/png;base64,": "png",
+            "data:image/jpeg;base64,": "jpeg",
+            "data:image/x-icon;base64,": "ico",
+        }
+        for data_uri_scheme in data_uri_scheme_dict.keys():
+            if href_value.startswith(data_uri_scheme):
+                self.ret.append((base64.b64decode(href_value.removeprefix(data_uri_scheme)), data_uri_scheme_dict[data_uri_scheme], 'binary'))
+                return
+
+        # 没type属性，也不符合RFC2397，直接匹配href属性值的后缀
+        file_type_list = ('jpg' ,'jpeg' , 'png', 'ico', 'webp', 'bmp', 'gif', 'cur', 'tif', 'tiff', 'jfif', 'pjpeg', 'pjp', 'avif', 'apng')
+        for file_type in file_type_list:
+            if href_value.endswith(f'.{file_type}'):
+                self.get_binary_img(href_value, file_type)
+                return
+        
+        # 无type，href也不合法，目前策略是放弃，需要进一步讨论，需要参考浏览器面对这种情况的应对策略
+    
+    def type_attr_parser(self, href_value, attr_value_dict) -> None:
+        match attr_value_dict['type']:
+            case 'image/svg+xml':  # svg文件 https://developer.mozilla.org/zh-CN/docs/Web/Media/Formats/Image_types
+                if not href_value.endswith('.svg'):
+                    self.ret.append((urllib.parse.unquote(href_value.removeprefix('data:image/svg+xml,')), 'svg', 'txt'))
+                self.get_binary_img(href_value, 'svg')
+            case 'image/apng': # apng
+                self.get_binary_img(href_value, 'apng')
+            case 'image/avif': # avif
+                self.get_binary_img(href_value, 'avif')
+            case 'image/gif': # gif
+                self.get_binary_img(href_value, 'gif')
+            case 'image/jpeg': # .jpg, .jpeg, .jfif, .pjpeg, .pjp
+                self.get_binary_img(href_value, 'jpeg')
+            case 'image/png': # .png
+                self.get_binary_img(href_value, 'png')
+            case 'image/webp': # .webp
+                self.get_binary_img(href_value, 'webp')
+            case 'image/bmp': # .bmp
+                self.get_binary_img(href_value, 'bmp')
+            case 'image/x-icon': # .ico、.cur
+                self.get_binary_img(href_value, 'ico')
+            case 'image/tiff': # .tif、.tiff
+                self.get_binary_img(href_value, 'tif')
+            case _:
+                self.ret.append((f"该网站填写了错误的数据标签，如果看到此消息，请提交issue给此项目，包括此文件，开发者将帮忙联系网站管理者\nself.url:{self.url}\nattr_value_dict['type']:{attr_value_dict['type']}", 'txt', 'txt'))  # 不合法的type

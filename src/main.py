@@ -36,37 +36,41 @@ choice_api: str = input('''
 请输入2后回车 直接在链接最后加上/favicon.ico获取
 请输入3后回车 使用iowen api （介绍 https://www.iowen.cn/faviconwangzhantubiaozhuaquapijiekou/） 
 请输入4后回车 下载该页面的html文件，并分析其<link rel="icon">和<link rel="shortcut icon">标签（主要适用于上面的api下载的icon和实际的icon不同的情况）
-默认为0:''')
+（浏览器是优先2号api，如果2号api失败就使用4号api，此处4号api失败可以尝试2号api）(实测除2，4api以外，0号api速度和质量都较好)
+默认为4:''')
 
 if not os.path.exists(dir_path): # 初始化文件夹
     os.makedirs(dir_path)
     
 with open('./links.txt') as links_file_stream: #读取links.txt
     for link in links_file_stream.readlines():  
+        if link.startswith("#"): # 开头#跳过这条链接
+            continue
+
         link: str = link.removesuffix('\n').removesuffix('/') # 去除末尾换行符和可能的/
         if not link.startswith('https://') and not link.startswith('http://'):  # 给没有https://也没有http://的链接加上https://
             link = f'https://{link}'
         
         ico_file_name = link.replace('/','_').replace(':','_').replace('___','_')   # 处理文件名
         # link形式 [http://,https://]aaa.com
+
         print(f'正在下载 {link} 的图标')
         file_type: str = 'png'
         api: api_interface.APIBase = None
         writing_mode: str = 'binary'
         content: Union[str, bytes] = None
         match choice_api:
+            case '0':
+                api = getfavicon_api.API
             case '1':
                 api = google_api.API
             case '2':
                 api = append_char_api.API
             case '3':
-                link = link.removeprefix('https://').removeprefix('http://')  # link形式 aaa.com
                 api = iowen_api.API
-            case '4':
-                api = html_parser_api.API
             case _:
-                api = getfavicon_api.API
-                
+                api = html_parser_api.API
+
         try:
             content, file_type, writing_mode = api.get(link)
             ico_file_name: str = f"{ico_file_name}.{file_type}"  # 处理文件名

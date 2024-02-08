@@ -1,6 +1,9 @@
 .vscode
 favicons
+test_favicons
+test_links.txt
 links.txt
+links.py
 main.exe
 main.build
 main.dist
