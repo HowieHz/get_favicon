@@ -18,7 +18,7 @@ The script is used to automatically get the favicon
 
 第一次运行会在运行所在目录下生成links.txt,在其中放置你要获取favicon的网站
 （如果这一行开头是#，将会被程序忽略）
-以下形式都是允许的:
+以下形式都是允许的:  （如果进入网站就会跳转，请输入跳转之后的域名）
 
 ```txt
 https://howiehz.top

@@ -52,15 +52,14 @@ class HTMLParser(HTMLParser):
             # print(f"#gbi1 url={href_value}")
             r: requests.Response = requests.get(url=f'{href_value}', headers=headers)
         elif href_value.startswith('/'):  # 处理一下 /xxx.xxx
-            # print(f"#gbi2 url={self.url}{href_value}")
-            r: requests.Response = requests.get(url=f'{self.url}{href_value}', headers=headers)
+            # print(f"#gbi2 url={self.url.split('/')[0]}//{self.url.split('/')[2]}{href_value}")
+            r: requests.Response = requests.get(url=f"{self.url.split('/')[0]}//{self.url.split('/')[2]}{href_value}", headers=headers)
         elif href_value.startswith('https:') or href_value.startswith('http:'):  # 处理一下 https://xxx.xxx or http://xxx.xxx
             # print(f"#gbi3 url={href_value}")
             r: requests.Response = requests.get(url=f'{href_value}', headers=headers)
-        else:
-            href_value = f'/{href_value}'  # 处理一下 xxx.xxx
-            # print(f"#gbi4 url={self.url}{href_value}")
-            r: requests.Response = requests.get(url=f'{self.url}{href_value}', headers=headers)
+        else:  # 处理一下 xxx.xxx
+            # print(f"#gbi4 url={self.url.split('/')[0]}//{self.url.split('/')[2]}/{href_value}")
+            r: requests.Response = requests.get(url=f"{self.url.split('/')[0]}//{self.url.split('/')[2]}/{href_value}", headers=headers)
         self.ret.append((r.content, file_type, 'binary'))
         return
 
