@@ -14,8 +14,8 @@ class API(APIBase):
         Returns:
             tuple[Union[str, bytes], str, str]: 需要写入文件的值，文件后缀，写入模式('binary' / 'text' / 'txt')
         """
-        ret = html_parser_api(url)
+        ret = html_parser_api.API.get(url)
         if ret[1] == 'txt':
-            ret = append_char_api(url)
+            ret = append_char_api.API.get(url)
         return ret
     

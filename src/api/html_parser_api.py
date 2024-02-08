@@ -49,17 +49,17 @@ class HTMLParser(HTMLParser):
                 href_value = 'https:' + href_value
             elif self.url.startswith('http:'):
                 href_value = 'http:' + href_value
-            print(f"#gbi1 url={href_value}")
+            # print(f"#gbi1 url={href_value}")
             r: requests.Response = requests.get(url=f'{href_value}', headers=headers)
         elif href_value.startswith('/'):  # 处理一下 /xxx.xxx
-            print(f"#gbi2 url={self.url}{href_value}")
+            # print(f"#gbi2 url={self.url}{href_value}")
             r: requests.Response = requests.get(url=f'{self.url}{href_value}', headers=headers)
         elif href_value.startswith('https:') or href_value.startswith('http:'):  # 处理一下 https://xxx.xxx or http://xxx.xxx
-            print(f"#gbi3 url={href_value}")
+            # print(f"#gbi3 url={href_value}")
             r: requests.Response = requests.get(url=f'{href_value}', headers=headers)
         else:
             href_value = f'/{href_value}'  # 处理一下 xxx.xxx
-            print(f"#gbi4 url={self.url}{href_value}")
+            # print(f"#gbi4 url={self.url}{href_value}")
             r: requests.Response = requests.get(url=f'{self.url}{href_value}', headers=headers)
         self.ret.append((r.content, file_type, 'binary'))
         return
@@ -79,7 +79,7 @@ class HTMLParser(HTMLParser):
             not (attr_value_dict['rel'] == 'shortcut icon'):  
             return
         
-        print('#45', attr_value_dict)
+        # print('#45', attr_value_dict)
         
         href_value: str = attr_value_dict['href']
         if 'type' in attr_value_dict:
