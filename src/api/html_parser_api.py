@@ -24,7 +24,11 @@ class API(APIBase):
         parser = HTMLParser(url=url)
         parser.feed(response.text)
         if parser.ret:
-            return parser.ret[-1]  # 因为看到一个网站192*192写在32*32后面，所以取-1了
+            return parser.ret[-1]
+            # 要是这个网站写了多条<link rel="icon">和<link rel="shortcut icon">标签, 
+            # 就会多次解析，后面一条会覆盖前一条，最后留下的是最下面一条，也符合浏览器的读取，缺点是会多次下载该网站的icon
+            # 实例：看到多个个网站高分辨率的写在低分辨率的后面
+            #TODO 但是实际上浏览器加载的是第一条，所以是否要增加两个api，一个获取全部文件，一个“真”模拟浏览器获取第一个
         else:
             return (f'此api不支持该网站\nhtml原文:\n{response.text}', 'txt', 'text')
 
@@ -63,10 +67,27 @@ class HTMLParser(HTMLParser):
         self.ret.append((r.content, file_type, 'binary'))
         return
 
-    def handle_starttag(self, tag, attrs):
-        # 要是这个网站写了多条<link rel="icon">和<link rel="shortcut icon">标签, 
-        # 就会多次解析，后面一条会覆盖前一条，最后留下的是最下面一条，也符合浏览器的读取，缺点是会多次下载该网站的icon
-        # 对应上面 return parser.ret[-1]
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str]]):
+        """解析思路
+        1. 检查<link rel="icon">和<link rel="shortcut icon">标签
+        2. 检查是否有type，有type的进入2.x流程
+        2.1. 对应type除了svg都一定是二进制流直接下载，结束流程
+        2.2. type是svg的，检查下href是不是.svg后缀，是说明是二进制流，不是说明是RFC2397定义的文本编码成base64的形式，直接下载，结束流程
+        2.3. type不合法，调用检查href的流程（即3.x)
+        3. 检查是否有href，没type有href的进入3.x流程
+        3.1. 检查是否是RFC2397定义的一些数据（除开svg，因为svg用这个是要用文本模式写，其他都二进制流模式写就好了，还有svg必有type，况且前面已经处理过了）  #TODO 需要实验，没有type,svg在RFC2397和*.svg两种情况下是否能顺利读取，如果能顺利读取，那就要加上svg在这里了
+        3.2. 检查href文件后缀（除去svg，因为前面处理过了），对应的直接二进制流模式写入  
+        3- 只要有type或者href，就不走下面的流程了
+        4. 有这标签，但是type和href属性都没有，那直接忽略掉了，置空
+        
+        实验数据：有没有type，type错误，不影响edge正确读取*.png 
+        #TODO 故此提议是否应修改解析流程，先href再type
+        #TODO 有type，但是是base64的数据呢，直接二进制写入了，不行的
+
+        Args:
+            tag (str): _description_
+            attrs (list[tuple[str, str]]): _description_
+        """
         if tag != 'link':
             return
 
@@ -110,7 +131,7 @@ class HTMLParser(HTMLParser):
                 self.get_binary_img(href_value, file_type)
                 return
         
-        # 无type，href也不合法，目前策略是放弃，需要进一步讨论，需要参考浏览器面对这种情况的应对策略
+        # 无type，href也不合法，放弃掉，置空
     
     def type_attr_parser(self, href_value, attr_value_dict) -> None:
         match attr_value_dict['type']:
@@ -138,5 +159,6 @@ class HTMLParser(HTMLParser):
             case 'image/tiff': # .tif、.tiff
                 self.get_binary_img(href_value, 'tif')
             case _:
-                self.ret.append((f"该网站填写了错误的数据标签，如果看到此消息，请提交issue给此项目，包括此文件，开发者将帮忙联系网站管理者\nself.url:{self.url}\nattr_value_dict['type']:{attr_value_dict['type']}", 'txt', 'text'))  # 不合法的type
+                if 'href' in attr_value_dict:  # 不合法的type
+                    self.href_attr_parser(href_value)
         return
