@@ -16,6 +16,6 @@ class API(APIBase):
         """
         ret = html_parser_api.API.get(url)
         if ret[1] == 'txt':
-            ret = append_char_api.API.get(url)
+            ret = append_char_api.API.get(url=url, browser_emulation_api_flag=True)
         return ret
     

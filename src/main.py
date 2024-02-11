@@ -2,7 +2,7 @@ import requests, os, ssl
 from typing import Union
 from api import api_interface, append_char_api, getfavicon_api, google_api, html_parser_api, iowen_api, browser_emulation_api
 
-version = 'v1.2.0'
+version = 'v1.2.1'
 
 print(f'自动下载favicon工具 版本{version}')
 

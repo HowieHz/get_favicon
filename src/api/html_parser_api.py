@@ -80,7 +80,7 @@ class HTMLParser(HTMLParser):
         3- 只要有type或者href，就不走下面的流程了
         4. 有这标签，但是type和href属性都没有，那直接忽略掉了，置空
         
-        实验数据：有没有type，type错误，不影响edge正确读取*.png 
+        实验数据：有没有type，type错误，不影响edge正确读取*.png和RFC2397的文件
         #TODO 故此提议是否应修改解析流程，先href再type
         #TODO 有type，但是是base64的数据呢，直接二进制写入了，不行的
 
