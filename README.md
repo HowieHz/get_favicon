@@ -1,7 +1,6 @@
 # 自动获取网站favicon
 
 ![GitHub](https://img.shields.io/github/license/HowieHz/get_favicon)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/get_favicon)
 ![GitHub all releases](https://img.shields.io/github/downloads/HowieHz/get_favicon/total)
 ![GitHub repo size](https://img.shields.io/github/repo-size/HowieHz/get_favicon)
 
