@@ -1,4 +1,4 @@
-# 自动获取网站favicon
+# batch download site facvion
 
 ![GitHub](https://img.shields.io/github/license/HowieHz/get_favicon)
 ![GitHub all releases](https://img.shields.io/github/downloads/HowieHz/get_favicon/total)
